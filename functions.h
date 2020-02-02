@@ -1,3 +1,8 @@
+/* ------------------------------------
+*      Ondrej Cech (xcecho06), 2020
+*  ------------------------------------
+*/
+
 #include <iostream>
 #include <vector>
 #include <math.h>
@@ -577,13 +582,11 @@ void ShowSimple(vector<points> Pts){
  * @brief  simulace jednoho rezu
  * @param  v rez vyskovou mapou
  * @param  time delka kroku v sekundach
- * @param  loop pocet kroku
+ * @note   prubeh je vizualizovan pomoci "ASCII artu", je brzden.
 */
-void RunVectorWithVisual(vector<double> v, int time, int loop){
+void RunVectorWithVisual(vector<double> &v, int time){
     vector<points> Body, smernice, res;
     vector<double> zmeny;
-
-    for(int i=0; i<loop; i++){
         active_points(v, Body);
         //Read_points(Body);
         //points test;
@@ -600,7 +603,22 @@ void RunVectorWithVisual(vector<double> v, int time, int loop){
         zmeny=getHeight(Body,smernice);
         v=setHeight(v,zmeny,time);
         sleep(2);
-    }
+}
+
+
+/*
+ * @brief  simulace jednoho rezu
+ * @param  v rez vyskovou mapou
+ * @param  time delka kroku v sekundach
+*/
+void RunVector(vector<double> &v, int time){
+    vector<points> Body, smernice, res;
+    vector<double> zmeny;
+
+        active_points(v, Body);
+        smernice=GenerateSlopeVector(Body);
+        zmeny=getHeight(Body,smernice);
+        v=setHeight(v,zmeny,time);
 }
 
 

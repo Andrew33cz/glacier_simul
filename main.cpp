@@ -1,26 +1,114 @@
+/* ------------------------------------
+*      Ondrej Cech (xcecho06), 2020
+*  ------------------------------------
+*/
+
+
 #include <iostream>
 #include "functions.h"
+
+#define TINYEXR_IMPLEMENTATION
+#include "tinyexr.h"
 
 
 using namespace std;
 
-int main()
+int main(int argc, char *argv[])
 {
     //              0  1  2 3 4  5 6 7 8 9 10 11 12 13 14
-    vector<double> v= {4, 2, 2,2,3, 5,6,7,9,5, 3, 1, 1, 1, 3,6,8,9,8,6,3,2,1,3,5,5};
-    /*
-     0123456789abcde|
-    9        X      |
-    8        v      |
-    7       Xv      |
-    6      X v      |
-    5     X   X     |
-    4X    v   v     |
-    3v   X     X   X|
-    2 XXX      v   v|
-    1           XXX |
-    */
+    //vector<double> v= {4, 2, 2,2,3, 5,6,7,9,5, 3, 1, 1, 1, 3,6,8,9,8,6,3,2,1,3,5,5};
+    if(argc!=5){
+        cout<<"Zadejte parametry: nazev vstupniho souboru, delka kroku v sekundach,  pocet kroku a na jeden vystup"<<endl;
+    }
 
-    RunVectorWithVisual(v,3600,10);
+    string filename(argv[1]);
+    if(filename.size()>4){
+      //ocekava priponu ".exr", smaze ji, aby mohl editovat nazev souboru
+      filename.pop_back();
+      filename.pop_back();
+      filename.pop_back();
+      filename.pop_back();
+
+    }
+
+      const char* input = argv[1];//jmeno vstupniho souboru
+      float* out; // width * height * RGBA
+      int width;
+      int height;
+      const char* err = nullptr;
+      int ret = LoadEXR(&out, &width, &height, input, &err);
+      if (ret != TINYEXR_SUCCESS) {
+        if (err) {
+           fprintf(stderr, "ERR : %s\n", err);
+           FreeEXRErrorMessage(err); // release memory of error message.
+        }
+      }
+      else {
+      //ted je obrazek v dlouhem poli floatu out[width * height * RGBA]
+      //nacita po radcich
+
+      vector<double> cut(width);
+      vector<vector<double> >   hmap(height,cut);
+
+
+     for(int y=0; y<height; y++){
+        for(int x=0;x<width*4; x=x+4){
+            /*
+            cout<<"radek:"<<y<<"sloupec"<<x/4<<endl;
+            cout<<"R: "<<out[(y*width*4)+x]<<endl;
+            cout<<"G: "<<out[(y*width*4)+x+1]<<endl;
+            cout<<"B: "<<out[(y*width*4)+x+2]<<endl;
+            cout<<"A: "<<out[(y*width*4)+x+3]<<endl;
+            */
+            //viditelne kanaly v rozsahu 0-1, ale umoznuje uchovat i dalsi (jen jak je tam dostat?)
+            //jeden z nich vezme a ulozi do matice reprezentujici obrazek (pocita s sedym vstupem, tedy vsechny hodnoty RGB stejne)
+            hmap[y][x/4]=out[(y*width*4)+x+1];
+
+        }
+      }
+      free(out); // uvolnit data obrazku
+
+    int outputtime=atoi(argv[4]);
+    //counter pocita kroky simulace, numerator generovane obrazky
+    int numerator=0, counter=0;
+    for(int i=0;i<atoi(argv[3]);i++){//kroky zadane parametrem
+      for(int t=0;t<height;t++){
+            RunVector(hmap[t],atoi(argv[2]));//cas dany parametrem
+        }
+        counter++;
+        if(counter==outputtime){
+            counter=0;
+            numerator++;
+
+            //jmeno vygenerovaneho souboru
+            stringstream strs;
+            strs << filename<<"_"<<numerator<<".exr";
+            string temp_name = strs.str();
+            char name[temp_name.size()+1];
+            temp_name.copy(name,temp_name.size()+1);
+            name[temp_name.size()]='\0';
+            //musi byt formatu char*
+            const char *err = nullptr;
+
+            //vysledek simulace musi byt zase v podobe jednorozmerneho pole floatu
+            vector<double> concatenated=hmap[0];
+            for(int t=1;t<height;t++){//postupne napojuje jednotlive radky
+                concatenated.insert(concatenated.end(),hmap[t].begin(), hmap[t].end());
+            }
+            //konverze na floaty
+            vector<float> final(concatenated.begin(),concatenated.end());
+
+            int ret= SaveEXR(final.data(), int(width), int(height), /* channels */3, /* fp16? */0, name, &err);
+            if (ret) {
+                if (err) {
+                    cerr << err << std::endl;
+                    FreeEXRErrorMessage(err);
+                    }
+                cerr << "failed to write" << std::endl;
+                }
+            }
+      }
+
+    }
     return 0;
 }
