@@ -1,0 +1,2 @@
+TestD - bílý obrázek se šumem na odstartování ablace
+parametry ./TestD/TestD.exr 3600 50 5 (krok 1 hodina, 50 hodin simulace, každých 5 hodin výstup)
