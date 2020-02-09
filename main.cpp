@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
     //              0  1  2 3 4  5 6 7 8 9 10 11 12 13 14
     //vector<double> v= {4, 2, 2,2,3, 5,6,7,9,5, 3, 1, 1, 1, 3,6,8,9,8,6,3,2,1,3,5,5};
     if(argc!=5){
-        cout<<"Zadejte parametry: nazev vstupniho souboru, delka kroku v sekundach,  pocet kroku a na jeden vystup"<<endl;
+        cout<<"Zadejte parametry: nazev vstupniho souboru, delka kroku v sekundach,  pocet kroku a jednou za kolik kroku vystup"<<endl;
     }
 
     string filename(argv[1]);
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
             */
             //viditelne kanaly v rozsahu 0-1, ale umoznuje uchovat i dalsi (jen jak je tam dostat?)
             //jeden z nich vezme a ulozi do matice reprezentujici obrazek (pocita s sedym vstupem, tedy vsechny hodnoty RGB stejne)
-            hmap[y][x/4]=out[(y*width*4)+x+1];
+            hmap[y][x/4]=out[(y*width*4)+x+1]+100;
 
         }
       }
@@ -91,13 +91,19 @@ int main(int argc, char *argv[])
             const char *err = nullptr;
 
             //vysledek simulace musi byt zase v podobe jednorozmerneho pole floatu
-            vector<double> concatenated=hmap[0];
-            for(int t=1;t<height;t++){//postupne napojuje jednotlive radky
-                concatenated.insert(concatenated.end(),hmap[t].begin(), hmap[t].end());
+            vector<double> concatenated;
+            for(int y=0; y<height; y++){
+                for(int x=0;x<width; x=x++){
+                        for(int a=0; a<3;a++){
+                            concatenated.push_back(hmap[y][x]-100);
+                        }
+
+                }
             }
+
             //konverze na floaty
             vector<float> final(concatenated.begin(),concatenated.end());
-
+            cout<<"ukladani "<< name<<endl;
             int ret= SaveEXR(final.data(), int(width), int(height), /* channels */3, /* fp16? */0, name, &err);
             if (ret) {
                 if (err) {

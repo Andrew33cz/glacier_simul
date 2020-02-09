@@ -29,6 +29,8 @@ struct points {
   double y_axis;
 };
 
+enum State { visible, hidden, posshidden };
+
   void ClearScreen()
     {
     cout << string( 100, '\n' );
@@ -368,6 +370,58 @@ int refractTo(vector<points> Pts, int PointNum, points &vect){
 
 }
 
+/*
+ * @brief   hleda kam dopadne odraz z bodu PointNum v poli pts
+ * @param   Pts vektor s body
+ * @param   PointNum poradi bodu zdroje ve vektoru
+ * @param   PointTgt poradi bodu cile ve vektoru
+ * @return  0, pokud paprsek trefi cilovy bod, 1 pokud netrefi
+*/
+int SendRayTo(vector<points> Pts, int PointNum, int PointTgt){
+    double c;
+    double DeltaX=Pts[PointTgt].x_axis-Pts[PointNum].x_axis;
+    double DeltaY=Pts[PointTgt].y_axis-Pts[PointNum].y_axis;
+    double step=DeltaY/DeltaX;//body, ktere by mely stejnou x-ovou souradnici na sebe neuvidi, to uz je bylo osetreno drive
+    points place;
+    place.y_axis=Pts[PointNum].y_axis;
+    place.x_axis=Pts[PointNum].x_axis;
+    if(DeltaX>0){//kladna
+        for(int x=PointNum+1;x<PointTgt;x++){
+            //posun o bod po paprsku
+            if(place.x_axis<Pts[x].x_axis){
+                place.y_axis=place.y_axis+step;
+                place.x_axis++;
+            }
+            if(place.y_axis<=Pts[x].y_axis){//pokud se dostane v bode pod povrch->prekazka
+                return 1;
+            }
+
+        }
+
+    }
+    if(DeltaX<0){//zaporna
+        for(int x=PointNum-1;x>PointTgt;x--){
+            //posun o bod po paprsku
+            if(place.x_axis>Pts[x].x_axis){
+                place.y_axis=place.y_axis-step;//step bude mit po deleni obracene znamenko
+                place.x_axis--;
+            }
+            if(place.y_axis<=Pts[x].y_axis){//pokud se dostane v bode pod povrch->prekazka
+                return 1;
+            }
+
+        }
+
+    }
+    return 0;//nenasel zadnou prekazku->uspech
+}
+
+
+
+
+
+
+
 
 /*
  * @brief   urci viditelne body v Pts z pohledu Pts[PointNum]
@@ -417,6 +471,129 @@ void getVisible(vector<points> Pts, int PointNum,vector<points> Slopes, vector<i
     }
 }
 
+
+
+
+/*
+ * @brief   urci viditelne body v Pts z pohledu Pts[PointNum]
+ * @param   Pts vektor s body
+ * @param   PointNum poradi bodu ve vektoru
+ * @param   Reslt vektor pro ulozeni vysledku
+*/
+void NewgetVisible(vector<points> Pts, int PointNum,vector<points> Slopes, vector<int> &Reslt){
+
+    //cout<<"visible points:";
+    points normala;
+    normala.x_axis=Slopes[PointNum].x_axis;
+    normala.y_axis=Slopes[PointNum].y_axis;
+
+    double maxheight=Pts[PointNum].y_axis;
+    State st= visible;
+    //cout<<"normala=["<<normala.x_axis<< ","<< normala.y_axis<<"], ";
+    //doprava
+    for(int i=PointNum+1; i<Pts.size(); i++){
+        double deltaX=Pts[PointNum].x_axis-Pts[i].x_axis;
+        double deltaH=Pts[PointNum].y_axis-Pts[i].y_axis;
+        double test=deltaH-deltaX*Slopes[i].y_axis/Slopes[i].x_axis;
+        double cosangle=deltaH-deltaX*normala.y_axis/normala.x_axis;//skalarni soucin normály v bode x s vektorem p
+        //cout<< "p=["<< deltaX<< ","<< deltaH<<"], ";
+        //cout<<"cos: "<<cosangle<<" test: "<<test<<endl;
+        switch(st)
+            {
+                case visible  : //cout<<"visible"<<endl;
+                    if((Pts[i].y_axis>=maxheight)&&(Slopes[i].y_axis<=0)){//najdeme lokalni maximum vyssi nez bod, za nej uz neuvidi
+                        st=hidden;
+                        maxheight=Pts[i].y_axis;
+                        }
+                    else if((test>0)&&(cosangle<0)){//uhel mezi normalou v bode x a vektorem p musi byt v rozmezi 0-90 nebo 270-360, tedy v kladnych castech kosinu
+                        //cout<<PointNum<<":["<<Pts[i].x_axis<<","<<Pts[i].y_axis<<"],";
+                        Reslt.push_back(i);
+                        }
+                    else{
+                        st=posshidden;//
+                        }
+
+                    break;
+                case hidden : //cout<<"hidden"<<endl;
+                    //jsme v dire zarucene blokovane prekazkou
+                    if(Pts[i].y_axis>=maxheight){
+                        //dostali jsme se nad okraj
+                        st=posshidden;
+                    }
+                    break;
+                case posshidden : //cout<<"posshidden"<<endl;
+                    if((Pts[i].y_axis>=maxheight)&&(Slopes[i].y_axis<=0)){//najdeme lokalni maximum vyssi nez bod, za nej uz neuvidi
+                        st=hidden;
+                        maxheight=Pts[i].y_axis;
+                        }
+                    else if((test>0)&&(cosangle<0)){//uhel mezi normalou v bode x a vektorem p musi byt v rozmezi 0-90 nebo 270-360, tedy v kladnych castech kosinu
+                        //cout<<PointNum<<":["<<Pts[i].x_axis<<","<<Pts[i].y_axis<<"],";
+                        if(SendRayTo(Pts,PointNum, i)==0){
+                            st=visible;
+                            Reslt.push_back(i);
+                            }
+                        }
+                    else{
+                        st=posshidden;//
+                        }
+
+                    break;
+            }
+        }
+    //doleva
+    for(int j=PointNum-1; j>=0; j--){
+        double deltaX=Pts[PointNum].x_axis-Pts[j].x_axis;
+        double deltaH=Pts[PointNum].y_axis-Pts[j].y_axis;
+        double test=deltaH-deltaX*Slopes[j].y_axis/Slopes[j].x_axis;
+        double cosangle=deltaH-deltaX*normala.y_axis/normala.x_axis;//skalarni soucin normály v bode x s vekotrem p
+        //cout<< "p=["<< deltaX<< ","<< deltaH<<"], ";
+        //cout<<j<<" cos: "<<cosangle<<" test: "<<test<<endl;
+        switch(st)
+            {
+                case visible  : //cout<<"visible"<<endl;
+                    if((Pts[j].y_axis>=maxheight)&&(Slopes[j].y_axis>=0)){//najdeme lokalni maximum vyssi nez bod, za nej uz neuvidi
+                        st=hidden;
+                        maxheight=Pts[j].y_axis;
+                        }
+                    else if((test>0)&&(cosangle<0)){//uhel mezi normalou v bode x a vektorem p musi byt v rozmezi 0-90 nebo 270-360, tedy v kladnych castech kosinu
+                        //cout<<PointNum<<":["<<Pts[i].x_axis<<","<<Pts[i].y_axis<<"],";
+                        Reslt.push_back(j);
+                        }
+                    else{
+                        st=posshidden;//
+                        }
+
+                    break;
+                case hidden : //cout<<"hidden"<<endl;
+                    //jsme v dire zarucene blokovane prekazkou
+                    if(Pts[j].y_axis>=maxheight){
+                        //dostali jsme se nad okraj
+                        st=posshidden;
+                    }
+                    break;
+                case posshidden : //cout<<"posshidden"<<endl;
+                    if((Pts[j].y_axis>=maxheight)&&(Slopes[j].y_axis>=0)){//najdeme lokalni maximum vyssi nez bod, za nej uz neuvidi
+                        st=hidden;
+                        maxheight=Pts[j].y_axis;
+                        }
+                    else if((test>0)&&(cosangle<0)){//uhel mezi normalou v bode x a vektorem p musi byt v rozmezi 0-90 nebo 270-360, tedy v kladnych castech kosinu
+                        //cout<<PointNum<<":["<<Pts[i].x_axis<<","<<Pts[i].y_axis<<"],";
+                        if(SendRayTo(Pts,PointNum, j)==0){
+                            st=visible;
+                            Reslt.push_back(j);
+                            }
+                        }
+                    else{
+                        st=posshidden;//
+                        }
+
+                    break;
+            }
+    }
+}
+
+
+
 /*
  * @brief   urci rychlost ablace Pts[PointNum]
  * @param   Pts vektor s body
@@ -425,7 +602,7 @@ void getVisible(vector<points> Pts, int PointNum,vector<points> Slopes, vector<i
 */
 double getAblation(vector<points> Pts, int PointNum, vector<points> Slopes){
     vector<int> popis;
-    getVisible(Pts,PointNum,Slopes,popis);
+    NewgetVisible(Pts,PointNum,Slopes,popis);
     double Iota=0;
     double deltaH, deltaX;
     points derivate;
@@ -447,7 +624,34 @@ double getAblation(vector<points> Pts, int PointNum, vector<points> Slopes){
     //cout<<PointNum<<":Iota="<<Iota<<endl;
 
     //                ergcm-2sec-1    gcm-3 cm2sec-1
-    double height=-0.5*  1e6*    Iota/(7e9); //+2.5e-5
+    double D2;
+    double h;
+    double deriv2;
+    if(PointNum==Slopes.size()-1){//posledni bod, derivace bude rozdil s predchozim
+            deriv2=Slopes[PointNum-1].x_axis;
+            h=Pts[PointNum].x_axis-Pts[PointNum-1].x_axis;
+            if(deriv2==0){
+                deriv2=0.1;
+            }
+            if(h==0){
+                h=0.1;
+            }
+
+        D2=((derivate.y_axis/derivate.x_axis)-(Slopes[PointNum-1].y_axis/deriv2))/h;//(f'(PtNum)-f'(PtNum-1))/h;
+    }
+    else{//prvni az predposledni, derivace bude rozdil s nasledujicim
+            deriv2=Slopes[PointNum+1].x_axis;
+            h=Pts[PointNum+1].x_axis-Pts[PointNum].x_axis;
+            if(deriv2==0){
+                deriv2=0.1;
+            }
+            if(h==0){
+                h=0.1;
+            }
+
+        D2=((Slopes[PointNum+1].y_axis/deriv2)-(derivate.y_axis/derivate.x_axis))/h;//(f'(PtNum)-f'(PtNum-1))/h;
+    }
+    double height=-0.5*  1e6*    Iota/(7e9); //+2.5e-5*D2;
     //cout<<PointNum<<":vyska="<<height<<endl;
     return height;
 }
@@ -525,8 +729,11 @@ vector<double> getHeight(vector<points> Pts,vector<points> Slopes){
 */
 vector<double> setHeight(vector<double> input, vector<double> heights, double time){
     vector<double> helper;
+    double value;
     for(int i=0; i<input.size();i++){
-        helper.push_back(input[i]-(heights[i]*time));
+        value=input[i]-(heights[i]*time);
+        if(value<0){value=0; cout<<input[i]<<":"<<heights[i]<<endl;}//predpokladame, ze 0 je zem, ta uz dal nemuze tat(?)
+        helper.push_back(value);
         //cout<<input[i]<<":"<<heights[i]<<endl;
     }
     return helper;
