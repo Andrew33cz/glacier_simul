@@ -74,6 +74,7 @@ void active_points (vector<double> &vect, vector<points> &Pts)
         Pts[counter].y_axis=vect[i];
         counter++;
     }
+    //cout<<Pts.size()<<endl;
     //cout<<endl;
 }
 
@@ -541,11 +542,12 @@ void NewgetVisible(vector<points> Pts, int PointNum,vector<points> Slopes, vecto
             }
         }
     //doleva
+    st=visible;
     for(int j=PointNum-1; j>=0; j--){
         double deltaX=Pts[PointNum].x_axis-Pts[j].x_axis;
         double deltaH=Pts[PointNum].y_axis-Pts[j].y_axis;
         double test=deltaH-deltaX*Slopes[j].y_axis/Slopes[j].x_axis;
-        double cosangle=deltaH-deltaX*normala.y_axis/normala.x_axis;//skalarni soucin normály v bode x s vekotrem p
+        double cosangle=deltaH-deltaX*normala.y_axis/normala.x_axis;//skalarni soucin normály v bode x s vektorem p
         //cout<< "p=["<< deltaX<< ","<< deltaH<<"], ";
         //cout<<j<<" cos: "<<cosangle<<" test: "<<test<<endl;
         switch(st)
@@ -603,6 +605,7 @@ void NewgetVisible(vector<points> Pts, int PointNum,vector<points> Slopes, vecto
 double getAblation(vector<points> Pts, int PointNum, vector<points> Slopes){
     vector<int> popis;
     NewgetVisible(Pts,PointNum,Slopes,popis);
+
     double Iota=0;
     double deltaH, deltaX;
     points derivate;
@@ -689,7 +692,6 @@ vector<double> getHeight(vector<points> Pts,vector<points> Slopes){
     //ulozi do stejne dlouheho pole
     double h;
     for (int i = 0; i != Pts.size(); i++){
-
         h=getAblation(Pts,i,Slopes);
         heights.push_back(h);
     }
@@ -826,7 +828,97 @@ void RunVector(vector<double> &v, int time){
         smernice=GenerateSlopeVector(Body);
         zmeny=getHeight(Body,smernice);
         v=setHeight(v,zmeny,time);
+
 }
 
+
+
+/*
+ * @brief  z matice hodnot vytvori vektor s hodnotami z daneho sloupce (predpokladame, ze vektory ve vektoru jsou jednotlive radky)
+ * @param  matrix matice hodnot
+ * @param  width  sirka matice
+ * @param  height vyska matice
+ * @param  col    cislo sloupce
+ * @param  reslt  vektor pro ulozeni vysledku
+*/
+void getVertical(vector<vector<double> >   matrix, int width, int height, int col, vector<double> &reslt){
+     for(int y=0; y<height; y++){
+        //cout<<matrix[y][col]<<"; ";
+        reslt.push_back(matrix[y][col]);
+      }
+    //cout<<endl;
+}
+
+
+/*
+ * @brief  z matice hodnot vytvori vektor s hodnotami z diagonaly v kladnem smeru
+ * @param  matrix matice hodnot
+ * @param  width  sirka matice
+ * @param  height vyska matice
+ * @param  reslt  vektor pro ulozeni vysledku
+ * @note   neni prakticky pouzitelna, pouze jako predpoklad funkce getDiagonalFromPoint()
+*/
+void getDiagonal(vector<vector<double> >   matrix, int width, int height, vector<double> &reslt){
+    if(width>height){
+        for(int y=0; y<height; y++){
+            //cout<<matrix[y][y]<<"; ";
+            reslt.push_back(matrix[y][y]);
+            }
+            //cout<<endl;
+    }
+    else{
+        for(int x=0; x<width; x++){
+            //cout<<matrix[x][x]<<"; ";
+            reslt.push_back(matrix[x][x]);
+            }
+            //cout<<endl;
+    }
+}
+
+
+/*
+ * @brief  z matice hodnot vytvori vektor s hodnotami z diagonaly v kladnem smeru prochazejici zadanym bodem
+ * @param  matrix matice hodnot
+ * @param  width  sirka matice
+ * @param  height vyska matice
+ * @param  y_axis pozice bodu v matici (matice definovana jako matice[sloupce][radky])
+ * @param  x_axis pozice bodu v matici
+ * @param  reslt  vektor pro ulozeni vysledku
+*/
+void getDiagonalFromPoint(vector<vector<double> >   matrix, int width, int height, int y_axis, int x_axis, vector<double> &reslt){
+    if(width>height){
+        if(y_axis>x_axis){
+             for(int y=(y_axis-x_axis); y<height; y++){
+                //cout<<matrix[y][y-(y_axis-x_axis)]<<"; ";
+                reslt.push_back(matrix[y][y-(y_axis-x_axis)]);
+            }
+            //cout<<endl;
+        }
+        else{
+             for(int y=0; y<height; y++){
+                //cout<<matrix[y][y+(x_axis-y_axis)]<<"; ";
+                reslt.push_back(matrix[y][y+(x_axis-y_axis)]);
+            }
+            //cout<<endl;
+        }
+
+    }
+    else{
+        if(y_axis>x_axis){
+            for(int x=0; x<width; x++){
+                //cout<<matrix[x+(y_axis-x_axis)][x]<<"; ";
+                reslt.push_back(matrix[x+(y_axis-x_axis)][x]);
+                }
+           // cout<<endl;
+        }
+        else{
+            for(int x=0; x<width-(x_axis-y_axis); x++){
+                //cout<<matrix[x][x+(x_axis-y_axis)]<<"; ";
+                reslt.push_back(matrix[x][x+(x_axis-y_axis)]);
+                }
+            //cout<<endl;
+        }
+    }
+}
 
 

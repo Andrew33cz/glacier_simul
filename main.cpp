@@ -9,6 +9,7 @@
 
 #define TINYEXR_IMPLEMENTATION
 #include "tinyexr.h"
+# define resizer        300
 
 
 using namespace std;
@@ -62,18 +63,19 @@ int main(int argc, char *argv[])
             */
             //viditelne kanaly v rozsahu 0-1, ale umoznuje uchovat i dalsi (jen jak je tam dostat?)
             //jeden z nich vezme a ulozi do matice reprezentujici obrazek (pocita s sedym vstupem, tedy vsechny hodnoty RGB stejne)
-            hmap[y][x/4]=out[(y*width*4)+x+1]+100;
+            hmap[y][x/4]=out[(y*width*4)+x+1]*resizer;
 
         }
       }
       free(out); // uvolnit data obrazku
-
+    //cout<<"nacteno " <<endl;
     int outputtime=atoi(argv[4]);
     //counter pocita kroky simulace, numerator generovane obrazky
     int numerator=0, counter=0;
     for(int i=0;i<atoi(argv[3]);i++){//kroky zadane parametrem
       for(int t=0;t<height;t++){
             RunVector(hmap[t],atoi(argv[2]));//cas dany parametrem
+            //cout<<"runvector "<<t<<endl;
         }
         counter++;
         if(counter==outputtime){
@@ -95,11 +97,13 @@ int main(int argc, char *argv[])
             for(int y=0; y<height; y++){
                 for(int x=0;x<width; x=x++){
                         for(int a=0; a<3;a++){
-                            concatenated.push_back(hmap[y][x]-100);
+                            concatenated.push_back(hmap[y][x]/resizer);
                         }
 
                 }
             }
+
+
 
             //konverze na floaty
             vector<float> final(concatenated.begin(),concatenated.end());
