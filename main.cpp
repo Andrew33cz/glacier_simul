@@ -19,7 +19,20 @@ int main(int argc, char *argv[])
     //              0  1  2 3 4  5 6 7 8 9 10 11 12 13 14
     //vector<double> v= {4, 2, 2,2,3, 5,6,7,9,5, 3, 1, 1, 1, 3,6,8,9,8,6,3,2,1,3,5,5};
     if(argc!=5){
-        cout<<"Zadejte parametry: nazev vstupniho souboru, delka kroku v sekundach,  pocet kroku a jednou za kolik kroku vystup"<<endl;
+        cerr<<"Zadejte parametry: nazev vstupniho souboru, delka kroku v sekundach, celkovy pocet kroku a pocet kroku mezi generovanym vystupu."<<endl<<"Napriklad glac_sim.exe ./Test/Test.exr 3600 24 1"<<endl;
+        return 1;
+    }
+    else if(atoi(argv[2])<1){
+        cerr<<"Argument 2 (delka kroku) musi byt prirozene cislo (vetsi nez 0)."<<endl;
+        return 1;
+    }
+        else if(atoi(argv[3])<1){
+        cerr<<"Argument 3 (pocet kroku) musi byt prirozene cislo (vetsi nez 0)."<<endl;
+        return 1;
+    }
+        else if(atoi(argv[4])<1){
+        cerr<<"Argument 4 (pocet kroku mezi generovanym vystupu) musi byt prirozene cislo (vetsi nez 0)."<<endl;
+        return 1;
     }
 
     string filename(argv[1]);
@@ -72,11 +85,27 @@ int main(int argc, char *argv[])
     int outputtime=atoi(argv[4]);
     //counter pocita kroky simulace, numerator generovane obrazky
     int numerator=0, counter=0;
+
+
+
+
     for(int i=0;i<atoi(argv[3]);i++){//kroky zadane parametrem
+
+
+      //prochazi vodorovne
       for(int t=0;t<height;t++){
             RunVector(hmap[t],atoi(argv[2]));//cas dany parametrem
             //cout<<"runvector "<<t<<endl;
         }
+        //prochazi svisle
+        for(int iter=0;iter<width;iter++){
+            vector<double>helpvector;
+            getVertical(hmap,width,height,iter,helpvector);
+            RunVector(helpvector,atoi(argv[2]));//cas dany parametrem
+            saveVertical(hmap,width,height,iter,helpvector);
+        }
+
+
         counter++;
         if(counter==outputtime){
             counter=0;

@@ -849,6 +849,22 @@ void getVertical(vector<vector<double> >   matrix, int width, int height, int co
     //cout<<endl;
 }
 
+/*
+ * @brief  uklada vektor zpet do matice
+ * @param  matrix cilova matice hodnot
+ * @param  width  sirka matice
+ * @param  height vyska matice
+ * @param  col    cislo sloupce
+ * @param  vect  vektor s daty
+*/
+void saveVertical(vector<vector<double> >  &matrix, int width, int height, int col, vector<double> vect){
+     for(int y=0; y<height; y++){
+        //cout<<matrix[y][col]<<"; ";
+        matrix[y][col]=vect[y];
+      }
+    //cout<<endl;
+}
+
 
 /*
  * @brief  z matice hodnot vytvori vektor s hodnotami z diagonaly v kladnem smeru
