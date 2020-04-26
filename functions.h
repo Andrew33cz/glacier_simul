@@ -18,6 +18,7 @@
 #define sleep(x) Sleep(1000 * (x))
 #endif
 
+#include <omp.h>
 
 using namespace std;
 
@@ -936,5 +937,3 @@ void getDiagonalFromPoint(vector<vector<double> >   matrix, int width, int heigh
         }
     }
 }
-
-

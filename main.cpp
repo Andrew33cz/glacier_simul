@@ -3,6 +3,7 @@
 *  ------------------------------------
 */
 
+#include <omp.h>
 
 #include <iostream>
 #include "functions.h"
@@ -93,16 +94,21 @@ int main(int argc, char *argv[])
 
 
       //prochazi vodorovne
+      #pragma omp parallel for simd
       for(int t=0;t<height;t++){
             RunVector(hmap[t],atoi(argv[2]));//cas dany parametrem
             //cout<<"runvector "<<t<<endl;
         }
         //prochazi svisle
+        #pragma omp parallel for
         for(int iter=0;iter<width;iter++){
             vector<double>helpvector;
             getVertical(hmap,width,height,iter,helpvector);
             RunVector(helpvector,atoi(argv[2]));//cas dany parametrem
+            #pragma omp critical
+            {
             saveVertical(hmap,width,height,iter,helpvector);
+            }
         }
 
 
@@ -124,7 +130,7 @@ int main(int argc, char *argv[])
             //vysledek simulace musi byt zase v podobe jednorozmerneho pole floatu
             vector<double> concatenated;
             for(int y=0; y<height; y++){
-                for(int x=0;x<width; x=x++){
+                for(int x=0;x<width; x++){
                         for(int a=0; a<3;a++){
                             concatenated.push_back(hmap[y][x]/resizer);
                         }
